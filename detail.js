@@ -53,16 +53,15 @@
     copyBtn.classList.toggle("is-disabled", !enabled);
   }
 
-  // 修改后的按钮逻辑：强制绿色背景
   function updateButtons(promptText, originalUrl) {
     const hasPrompt = !!(promptText && promptText.trim().length && !promptText.includes("TODO"));
     const hasOriginal = !!(originalUrl && originalUrl.trim().length);
 
     setCopyEnabled(hasPrompt);
-    setVisible(viewOriginalBtn, true); // 永远显示
+    setVisible(viewOriginalBtn, true);
 
     if (viewOriginalBtn) {
-      viewOriginalBtn.style.backgroundColor = "#16a34a"; // 绿色背景
+      viewOriginalBtn.style.backgroundColor = "#16a34a";
       viewOriginalBtn.style.color = "white";
       viewOriginalBtn.style.border = "none";
       viewOriginalBtn.style.fontWeight = "600";
@@ -92,9 +91,11 @@
   const author = item.creator || item.author || "@unknown";
   const type = item.type || "Image";
   const access = item.access || "Free";
-  const tags = Array.isArray(item.tags) ? item.tags : [];
+  const tags = Array.isArray(item.tags) ? item.tags : (item.category ? [item.category] : []);
+  
+  // 核心修复：让它认出多种名字的链接
   const promptText = (item.prompt || "").toString();
-  const originalUrl = (item.originalUrl || "").toString();
+  const originalUrl = (item.url || item.link || item.originalUrl || "").toString();
 
   if (titleEl) titleEl.textContent = title;
   if (authorEl) authorEl.textContent = author;
@@ -102,9 +103,9 @@
   if (tagsEl) tagsEl.innerHTML = tags.map(t => `<span class="tag">${t}</span>`).join("");
   if (imgEl) { imgEl.src = item.image || ""; imgEl.alt = title; }
 
-  // 修改后的文本框显示逻辑
   if (promptEl) {
     const isPromptValid = promptText && promptText.trim().length > 0 && !promptText.includes("TODO");
+    // 如果没有提示词，就显示链接作为兜底
     promptEl.value = isPromptValid ? promptText : originalUrl;
   }
 
@@ -113,8 +114,8 @@
   if (copyBtn) {
     copyBtn.addEventListener("click", async () => {
       const current = promptEl?.value || "";
-      if (!current.trim() || current === originalUrl) {
-        showToast("No prompt to copy.");
+      if (!current.trim()) {
+        showToast("No text to copy.");
         return;
       }
       const ok = await copyText(current);
